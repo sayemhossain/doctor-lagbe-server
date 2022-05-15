@@ -21,6 +21,7 @@ async function run() {
     console.log("Database connected");
 
     const serviceCollection = client.db("doctor_portal").collection("services");
+    const bookingCollection = client.db("doctor_portal").collection("bookings");
 
     // load services time data
     app.get("/service", async (req, res) => {
@@ -28,6 +29,13 @@ async function run() {
       const cursor = serviceCollection.find(query);
       const services = await cursor.toArray();
       res.send(services);
+    });
+
+    // add a new booking
+    app.post("/booking", async (req, res) => {
+      const booking = req.body;
+      const result = await bookingCollection.insertOne(booking);
+      res.send(result);
     });
   } finally {
   }

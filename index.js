@@ -22,6 +22,7 @@ async function run() {
 
     const serviceCollection = client.db("doctor_portal").collection("services");
 
+    // load services time data
     app.get("/service", async (req, res) => {
       const query = {};
       const cursor = serviceCollection.find(query);
@@ -41,3 +42,13 @@ app.get("/", (req, res) => {
 app.listen(port, () => {
   console.log(`Doctor app listening on port ${port}`);
 });
+
+/**
+ * API naming convention
+ * app.get('/booking') //get all booking in this collection or get more then one or by filter
+ *
+ * app.get('/booking/:id') //get a specific booking
+ * app.post('/booking') //add a new booking
+ * app.patch('/booking/:id) //update
+ * app.delete('/booking/:id) //deleting
+ */

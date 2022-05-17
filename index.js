@@ -52,12 +52,18 @@ async function run() {
         const bookedSlots = serviceBooking.map((s) => s.slot);
 
         //setp:6 select those slots that are not in booked slot
-        const available = service.slots.filter((s) => !booked.includes(s));
+        const available = service.slots.filter((s) => !bookedSlots.includes(s));
         service.slots = available;
       });
       res.send(services);
     });
 
+    app.get("/booking", async (req, res) => {
+      const patient = req.query.patient;
+      const query = { patient: patient };
+      const booking = await bookingCollection.find(query).toArray();
+      res.send(booking);
+    });
     // add a new booking
     app.post("/booking", async (req, res) => {
       const booking = req.body;

@@ -22,6 +22,7 @@ async function run() {
 
     const serviceCollection = client.db("doctor_portal").collection("services");
     const bookingCollection = client.db("doctor_portal").collection("bookings");
+    const userCollection = client.db("doctor_portal").collection("users");
 
     // load services time data
     app.get("/service", async (req, res) => {
@@ -29,6 +30,20 @@ async function run() {
       const cursor = serviceCollection.find(query);
       const services = await cursor.toArray();
       res.send(services);
+    });
+
+    app.put("/user/:email", async (req, res) => {
+      const email = req.params.email;
+      const user = req.body;
+      const filter = { email: email };
+      const options = { upsert: true };
+
+      // create a document that sets the plot of the movie
+      const updateDoc = {
+        $set: user,
+      };
+      const result = await userCollection.insertOne(filter, updateDoc, options);
+      res.send(result);
     });
 
     //Warning: this is not the best way to query multiple colllection. We somedays I will convert it into best way :::Start

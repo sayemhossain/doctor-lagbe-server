@@ -16,6 +16,7 @@ const client = new MongoClient(uri, {
   useUnifiedTopology: true,
   serverApi: ServerApiVersion.v1,
 });
+
 async function run() {
   try {
     await client.connect();
@@ -84,6 +85,8 @@ async function run() {
     //get all data useing email=patinet query
     app.get("/booking", async (req, res) => {
       const patient = req.query.patient;
+
+      console.log("auth header: ", authorization);
       const query = { patient: patient };
       const booking = await bookingCollection.find(query).toArray();
       res.send(booking);

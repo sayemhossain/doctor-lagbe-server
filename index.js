@@ -31,6 +31,7 @@ async function run() {
       res.send(services);
     });
 
+    //Warning: this is not the best way to query multiple colllection. We somedays I will convert it into best way :::Start
     app.get("/available", async (req, res) => {
       const date = req.query.date || "May 16, 2022";
 
@@ -57,6 +58,7 @@ async function run() {
       });
       res.send(services);
     });
+    //Warning: this is not the best way to query multiple colllection. We somedays I will convert it into best way :::End
 
     //get all data useing email=patinet query
     app.get("/booking", async (req, res) => {

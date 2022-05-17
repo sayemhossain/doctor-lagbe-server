@@ -58,6 +58,7 @@ async function run() {
       res.send(services);
     });
 
+    //get all data useing email=patinet query
     app.get("/booking", async (req, res) => {
       const patient = req.query.patient;
       const query = { patient: patient };

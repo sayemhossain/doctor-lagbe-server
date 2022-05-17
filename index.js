@@ -103,5 +103,6 @@ app.listen(port, () => {
  * app.get('/booking/:id') //get a specific booking
  * app.post('/booking') //add a new booking
  * app.patch('/booking/:id) //update
+ * app.put('/booking/:id) //like upsert=> update(if user exists) or insert (if doesn't exists)
  * app.delete('/booking/:id) //deleting
  */

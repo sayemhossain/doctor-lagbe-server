@@ -37,12 +37,10 @@ async function run() {
       const user = req.body;
       const filter = { email: email };
       const options = { upsert: true };
-
-      // create a document that sets the plot of the movie
       const updateDoc = {
         $set: user,
       };
-      const result = await userCollection.insertOne(filter, updateDoc, options);
+      const result = await userCollection.updateOne(filter, updateDoc, options);
       res.send(result);
     });
 

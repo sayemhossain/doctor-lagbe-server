@@ -11,7 +11,8 @@ app.use(cors());
 app.use(express.json());
 
 // this code from mongo db
-const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.brclz.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
+const uri =
+  "mongodb+srv://doctor-lagbe:scD78dMqJi6wMYJF@cluster0.ya0akxm.mongodb.net/?retryWrites=true&w=majority";
 const client = new MongoClient(uri, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
@@ -46,20 +47,8 @@ async function run() {
     const doctorCollection = client.db("doctor_portal").collection("doctors");
     const paymentCollection = client.db("doctor_portal").collection("payments");
 
-    const verifyAdmin = async (req, res, next) => {
-      const requester = req.decoded.email;
-      const requesterAccount = await userCollection.findOne({
-        email: requester,
-      });
-      if (requesterAccount.role === "admin") {
-        next();
-      } else {
-        res.status(403).send({ message: "forbidden" });
-      }
-    };
-
     // this is for payment
-    app.post("/create-payment-intent", verifyJWT, async (req, res) => {
+    app.post("/create-payment-intent", async (req, res) => {
       const service = req.body;
       const price = service.price;
       const amount = price * 100;
@@ -78,30 +67,12 @@ async function run() {
       res.send(services);
     });
 
-    app.get("/user", verifyJWT, async (req, res) => {
+    //get all user
+    app.get("/user", async (req, res) => {
       const users = await userCollection.find().toArray();
       res.send(users);
     });
-
-    // limit dashboard access
-    app.get("/admin/:email", async (req, res) => {
-      const email = req.params.email;
-      const user = await userCollection.findOne({ email: email });
-      const isAdmin = user.role === "admin";
-      res.send({ admin: isAdmin });
-    });
-    // this is make admin
-    app.put("/user/admin/:email", verifyJWT, verifyAdmin, async (req, res) => {
-      const email = req.params.email;
-
-      const filter = { email: email };
-      const updateDoc = {
-        $set: { role: "admin" },
-      };
-      const result = await userCollection.updateOne(filter, updateDoc);
-      res.send(result);
-    });
-
+    // this is for user collection
     app.put("/user/:email", async (req, res) => {
       const email = req.params.email;
       const user = req.body;
@@ -111,13 +82,33 @@ async function run() {
         $set: user,
       };
       const result = await userCollection.updateOne(filter, updateDoc, options);
-      // emplementing jwt
-      const token = jwt.sign(
-        { email: email },
-        process.env.ACCESS_TOKEN_SECRET,
-        { expiresIn: "1h" }
-      );
-      res.send({ result, token });
+
+      res.send(result);
+    });
+
+    // this is make admin
+    app.put("/user/admin/:email", async (req, res) => {
+      const email = req.params.email;
+      const filter = { email: email };
+      const updateDoc = {
+        $set: { role: "admin" },
+      };
+      const result = await userCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    });
+    //get specific user
+    app.get("/user/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const result = await userCollection.find(query).toArray();
+      res.send(result);
+    });
+    // limit dashboard access
+    app.get("/admin/:email", async (req, res) => {
+      const email = req.params.email;
+      const user = await userCollection.findOne({ email: email });
+      const isAdmin = user?.role === "admin";
+      res.send({ admin: isAdmin });
     });
 
     //Warning: this is not the best way to query multiple colllection. We somedays I will convert it into best way :::Start
@@ -150,20 +141,17 @@ async function run() {
     //Warning: this is not the best way to query multiple colllection. We somedays I will convert it into best way :::End
 
     //get all data useing email=patinet query
-    app.get("/booking", verifyJWT, async (req, res) => {
+    app.get("/booking", async (req, res) => {
       const patient = req.query.patient;
-      const decodedEmail = req.decoded.email;
-      if (patient == decodedEmail) {
-        const query = { patient: patient };
-        const booking = await bookingCollection.find(query).toArray();
-        return res.send(booking);
-      } else {
-        return res.status(403).send({ message: "Forbidden access" });
-      }
+      console.log(patient);
+
+      const query = { patient: patient };
+      const booking = await bookingCollection.find(query).toArray();
+      return res.send(booking);
     });
 
     //this is for payment booking
-    app.get("/booking/:id", verifyJWT, async (req, res) => {
+    app.get("/booking/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
       const booking = await bookingCollection.findOne(query);
@@ -184,7 +172,7 @@ async function run() {
       const result = await bookingCollection.insertOne(booking);
       return res.send({ success: true, result });
     });
-    app.patch("/booking/:id", verifyJWT, async (req, res) => {
+    app.patch("/booking/:id", async (req, res) => {
       const id = res.params;
       const payment = req.body;
       const query = { _id: ObjectId(id) };
@@ -204,20 +192,20 @@ async function run() {
     });
 
     // this is for find all doctor
-    app.get("/doctor", verifyJWT, verifyAdmin, async (req, res) => {
+    app.get("/doctor", async (req, res) => {
       const doctors = await doctorCollection.find().toArray();
       res.send(doctors);
     });
 
     //this create a doctor api
-    app.post("/doctor", verifyJWT, verifyAdmin, async (req, res) => {
+    app.post("/doctor", async (req, res) => {
       const doctor = req.body;
       const result = await doctorCollection.insertOne(doctor);
       res.send(result);
     });
 
     // this is for delete doctors
-    app.delete("/doctor/:email", verifyJWT, verifyAdmin, async (req, res) => {
+    app.delete("/doctor/:email", async (req, res) => {
       const email = req.params.email;
       const filter = { email: email };
       const result = await doctorCollection.deleteOne(filter);

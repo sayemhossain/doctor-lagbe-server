@@ -19,23 +19,6 @@ const client = new MongoClient(uri, {
   serverApi: ServerApiVersion.v1,
 });
 
-// this function for jwt
-function verifyJWT(req, res, next) {
-  const authHeader = req.headers.authorization;
-  if (!authHeader) {
-    return res.status(401).send({ message: "Unauthorized access" });
-  }
-  const token = authHeader.split(" ")[1];
-  // verify a token symmetric
-  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, function (err, decoded) {
-    if (err) {
-      return res.status(403).send({ message: "Forbidden access" });
-    }
-    req.decoded = decoded;
-    next();
-  });
-}
-
 async function run() {
   try {
     await client.connect();
@@ -46,6 +29,7 @@ async function run() {
     const userCollection = client.db("doctor_portal").collection("users");
     const doctorCollection = client.db("doctor_portal").collection("doctors");
     const paymentCollection = client.db("doctor_portal").collection("payments");
+    const reviewCollection = client.db("doctor_portal").collection("reviews");
 
     // this is for payment
     app.post("/create-payment-intent", async (req, res) => {
@@ -143,7 +127,6 @@ async function run() {
     //get all data useing email=patinet query
     app.get("/booking", async (req, res) => {
       const patient = req.query.patient;
-      console.log(patient);
 
       const query = { patient: patient };
       const booking = await bookingCollection.find(query).toArray();
@@ -211,6 +194,33 @@ async function run() {
       const result = await doctorCollection.deleteOne(filter);
       res.send(result);
     });
+
+    //this is for review
+    app.post("/reviews", async (req, res) => {
+      const review = req.body;
+      const result = await reviewCollection.insertOne(review);
+      res.send(result);
+    });
+    //get all reviews
+    app.get("/reviews", async (req, res) => {
+      const reviews = await reviewCollection.find().toArray();
+      const reverseReviews = reviews.reverse();
+      res.send(reverseReviews);
+    });
+    //cancel appointment
+    app.delete("/reviews/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: ObjectId(id) };
+      const result = await reviewCollection.deleteOne(filter);
+      res.send(result);
+    });
+    //cancel appointment
+    app.delete("/appointment/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: ObjectId(id) };
+      const result = await bookingCollection.deleteOne(filter);
+      res.send(result);
+    });
   } finally {
   }
 }
@@ -224,14 +234,3 @@ app.get("/", (req, res) => {
 app.listen(port, () => {
   console.log(`Doctor app listening on port ${port}`);
 });
-
-/**
- * API naming convention
- * app.get('/booking') //get all booking in this collection or get more then one or by filter
- *
- * app.get('/booking/:id') //get a specific booking
- * app.post('/booking') //add a new booking
- * app.patch('/booking/:id) //update
- * app.put('/booking/:id) //like upsert=> update(if user exists) or insert (if doesn't exists)
- * app.delete('/booking/:id) //deleting
- */

@@ -30,19 +30,8 @@ async function run() {
     const doctorCollection = client.db("doctor_portal").collection("doctors");
     const paymentCollection = client.db("doctor_portal").collection("payments");
     const reviewCollection = client.db("doctor_portal").collection("reviews");
+    const contactCollection = client.db("doctor_portal").collection("contacts");
 
-    // this is for payment
-    app.post("/create-payment-intent", async (req, res) => {
-      const service = req.body;
-      const price = service.price;
-      const amount = price * 100;
-      const paymentIntent = await stripe.paymentIntents.create({
-        amount: amount,
-        currency: "usd",
-        payment_method_types: ["card"],
-      });
-      res.send({ clientSecret: paymentIntent.client_secret });
-    });
     // load services time data
     app.get("/service", async (req, res) => {
       const query = {};
@@ -93,6 +82,12 @@ async function run() {
       const user = await userCollection.findOne({ email: email });
       const isAdmin = user?.role === "admin";
       res.send({ admin: isAdmin });
+    });
+    // get all admin and super admin
+    app.get("/alladmin", async (req, res) => {
+      const query = { role: "admin" };
+      const result = await userCollection.find(query).toArray();
+      res.send(result);
     });
 
     //Warning: this is not the best way to query multiple colllection. We somedays I will convert it into best way :::Start
@@ -174,6 +169,41 @@ async function run() {
       res.send(updateDoc);
     });
 
+    //this is for payment
+    app.post("/payment", async (req, res) => {
+      const paymentData = req.body;
+      const result = await paymentCollection.insertOne(paymentData);
+      res.send(result);
+    });
+
+    //get id based payment
+    app.get("/payment/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: ObjectId(id) };
+      const result = await paymentCollection.findOne(filter);
+      res.send(result);
+    });
+    //get based on email
+    app.get("/payments/:email", async (req, res) => {
+      const email = req.params.email;
+      const filter = { patient: email };
+      const productPayment = await paymentCollection.find(filter).toArray();
+      const result = productPayment.reverse();
+      res.send(result);
+    });
+    // this is for find all payment
+    app.get("/payments", async (req, res) => {
+      const result = await paymentCollection.find().toArray();
+      res.send(result);
+    });
+    //cancel appointment
+    app.delete("/payments/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: ObjectId(id) };
+      const result = await paymentCollection.deleteOne(filter);
+      res.send(result);
+    });
+
     // this is for find all doctor
     app.get("/doctor", async (req, res) => {
       const doctors = await doctorCollection.find().toArray();
@@ -219,6 +249,19 @@ async function run() {
       const id = req.params.id;
       const filter = { _id: ObjectId(id) };
       const result = await bookingCollection.deleteOne(filter);
+      res.send(result);
+    });
+
+    //this is for review
+    app.post("/contact", async (req, res) => {
+      const contactData = req.body;
+      const result = await contactCollection.insertOne(contactData);
+      res.send(result);
+    });
+
+    //get all contact
+    app.get("/contact", async (req, res) => {
+      const result = await contactCollection.find().toArray();
       res.send(result);
     });
   } finally {
